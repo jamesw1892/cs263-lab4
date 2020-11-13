@@ -1,12 +1,27 @@
 package dcs;
 
-import spark.*;
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-
 import static dcs.SessionUtil.*;
 
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import spark.*;
+
 public class LoginController {
+    private static final ZonedDateTime TWOFA_START_TIME = ZonedDateTime.ofInstant(Instant.ofEpochSecond(0), ZoneId.of("UTC"));
+    private static final Duration TWOFA_TIME_INTERVAL = Duration.ofMinutes(30);
+    private static final String TWOFA_ALGORITHM = "HmacSHA256";
+    private static final int TWOFA_NUM_DIGITS = 6;
 
     // the DCS master database, very volatile, don't turn off the power
     private static Database database = new Database();
@@ -173,7 +188,9 @@ public class LoginController {
     * the start time.
     */
     private static long intervals() {
-        return 0; // TODO: not implemented
+        ZonedDateTime endDateTime = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("UTC"));
+        Duration elapsedTime = Duration.between(TWOFA_START_TIME, endDateTime);
+        return elapsedTime.dividedBy(TWOFA_TIME_INTERVAL);
     }
 
     /**
@@ -184,9 +201,33 @@ public class LoginController {
         // calculate the number of intervals which have elapsed
         // based on the TOTP configuration (startDateTime and
         // interval)
-        long c = intervals();
+        long numIntervals = intervals();
 
-        // TODO: Alan, please fix.
-        return "time-based one-time password";
+        // Convert num_intervals from long to byte[] to use in HMAC
+        ByteBuffer byteBuffer = ByteBuffer.allocate(Long.BYTES);
+        byteBuffer.putLong(numIntervals);
+        byte[] intervalBytes = byteBuffer.array();
+
+        // Convert key from String to SecretKey to be used in HMAC
+        SecretKeySpec k = new SecretKeySpec(key.getBytes(), TWOFA_ALGORITHM);
+
+        try {
+            // Add the key to HMAC
+            Mac hmac = Mac.getInstance(TWOFA_ALGORITHM);
+            hmac.init(k);
+
+            // Calculate HMAC with time interval
+            byte[] hmacBytes = hmac.doFinal(intervalBytes);
+
+            // Convert HMAC to an easy-to-read integer with `NUM_DIGITS` digits
+            String s = (new BigInteger(hmacBytes)).mod(BigInteger.TEN.pow(TWOFA_NUM_DIGITS)).toString();
+            while (s.length() < TWOFA_NUM_DIGITS) {
+                s = "0" + s;
+            }
+            return s;
+
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
