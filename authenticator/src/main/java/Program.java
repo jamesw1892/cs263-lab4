@@ -92,8 +92,7 @@ public class Program {
             return s;
 
         } catch (GeneralSecurityException e) {
-            System.out.println("HMAC error: " + e.getMessage());
-            return "";
+            throw new RuntimeException(e);
         }
     }
 }
