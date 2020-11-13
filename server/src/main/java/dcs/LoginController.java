@@ -5,6 +5,7 @@ import static dcs.SessionUtil.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -12,6 +13,7 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -180,7 +182,13 @@ public class LoginController {
     * Generates a key for 2FA.
     */
     private static String generate2FAKey() {
-        return "key"; // TODO: not a good key
+        try {
+            KeyGenerator keyGenerator = KeyGenerator.getInstance(TWOFA_ALGORITHM);
+            keyGenerator.init(new SecureRandom());
+            return keyGenerator.generateKey().toString();
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
