@@ -1,13 +1,21 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 public class Program {
     private static ZonedDateTime startDateTime;
     private static Duration interval;
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final int NUM_DIGITS = 6;
 
     /**
     * The main entry for this application.
@@ -45,7 +53,7 @@ public class Program {
     * the start time.
     */
     private static long intervals() {
-        ZonedDateTime endDateTime = ZonecDateTime.ofInstant(Instant.ofEpochSecond(0), ZoneId.of("UTC"));
+        ZonedDateTime endDateTime = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("UTC"));
         Duration elapsedTime = Duration.between(startDateTime, endDateTime);
         return elapsedTime.dividedBy(interval);
     }
@@ -58,9 +66,34 @@ public class Program {
         // calculate the number of intervals which have elapsed
         // based on the TOTP configuration (startDateTime and
         // interval)
-        long c = intervals();
+        long numIntervals = intervals();
 
-        // TODO: Alan, please fix.
-        return "time-based one-time password";
+        // Convert num_intervals from long to byte[] to use in HMAC
+        ByteBuffer byteBuffer = ByteBuffer.allocate(Long.BYTES);
+        byteBuffer.putLong(numIntervals);
+        byte[] intervalBytes = byteBuffer.array();
+
+        // Convert key from String to SecretKey to be used in HMAC
+        SecretKeySpec k = new SecretKeySpec(key.getBytes(), HMAC_ALGORITHM);
+
+        try {
+            // Add the key to HMAC
+            Mac hmac = Mac.getInstance(HMAC_ALGORITHM);
+            hmac.init(k);
+
+            // Calculate HMAC with time interval
+            byte[] hmacBytes = hmac.doFinal(intervalBytes);
+
+            // Convert HMAC to an easy-to-read integer with `NUM_DIGITS` digits
+            String s = (new BigInteger(hmacBytes)).mod(BigInteger.TEN.pow(NUM_DIGITS)).toString();
+            while (s.length() < NUM_DIGITS) {
+                s = "0" + s;
+            }
+            return s;
+
+        } catch (GeneralSecurityException e) {
+            System.out.println("HMAC error: " + e.getMessage());
+            return "";
+        }
     }
 }
