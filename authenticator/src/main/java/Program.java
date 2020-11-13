@@ -1,5 +1,9 @@
-import java.io.*;
-import java.time.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 public class Program {
     private static ZonedDateTime startDateTime;
@@ -41,7 +45,9 @@ public class Program {
     * the start time.
     */
     private static long intervals() {
-        return 0; // TODO: not implemented
+        ZonedDateTime endDateTime = ZonecDateTime.ofInstant(Instant.ofEpochSecond(0), ZoneId.of("UTC"));
+        Duration elapsedTime = Duration.between(startDateTime, endDateTime);
+        return elapsedTime.dividedBy(interval);
     }
 
     /**
