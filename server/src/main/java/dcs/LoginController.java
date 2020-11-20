@@ -112,22 +112,26 @@ public class LoginController {
         // the OTP the client sent as part of the request
         String clientOTP = request.queryParams("otp");
 
-        // TODO: retrieve the key from whereever it is stored
-        String key = "key";
+        // Retrieve the key from the session
+        String key = request.session().attribute("2FAKey");
+
+        // reject if hasn't been set
+        if (key == null) {
+            response.redirect("/login/");
+            return null;
+        }
 
         // calculate our OTP
         String otp = otp(key);
 
-        if(!otp.equals(clientOTP)) {
+        if (!otp.equals(clientOTP)) {
             response.redirect("/login/");
             return null;
         }
 
         // authentication "successful"
         model.put("authenticationSucceeded", true);
-
-        // TODO: replace "username" with the user's actual username
-        request.session().attribute("currentUser", "username");
+        request.session().attribute("currentUser", request.queryParams("username"));
 
         // redirect the user somewhere, if this was requested
         if (getQueryLoginRedirect(request) != null) {
