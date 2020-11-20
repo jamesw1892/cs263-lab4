@@ -21,3 +21,7 @@ Implement the `generate2FAKey` method in `server/src/main/java/dcs/LoginControll
 # Ex14
 
 Complete the `handleLoginPost` method in `server/src/main/java/dcs/LoginController.java` to generate the key using the `generate2FAKey` method and store it in the session.
+
+# Ex15
+
+Complete the `server2FAPage` method in `server/src/main/java/dcs/LoginController.java` to put the key from the session in the model to serve the 2FA page if it exists (and therefore they have been authenticated).

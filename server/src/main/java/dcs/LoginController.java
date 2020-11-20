@@ -82,9 +82,7 @@ public class LoginController {
             return ViewUtil.render(request, model, "/velocity/login.vm");
         }
 
-        // TODO: generate a key for 2FA; you probably want to
-        // store it somewhere so that it is available in subsequent
-        // requests
+        // Generate 2FA key and store in the session
         String key = generate2FAKey();
         request.session().attribute("2FAKey", key);
 
@@ -95,12 +93,12 @@ public class LoginController {
     public static Route serve2FAPage = (Request request, Response response) -> {
         Map<String, Object> model = new HashMap<>();
 
-        // TODO: retrieve the 2FA key for this login attempt and
-        // make sure there is one; otherwise, clients could just
-        // request the /2fa/ page without having authenticated
-
-        // TODO: the 2fa.vm view expects the model to contain an
-        // entry named "twoFAcode" which contains the key
+        // Add the 2FA key to the model so the 2fa page works
+        // if does not exist, they haven't been authenticated
+        String key = request.session().attribute("2FAKey");
+        if (key != null) {
+            model.put("twoFAcode", key);
+        }
 
         return ViewUtil.render(request, model, "/velocity/2fa.vm");
 
