@@ -15,6 +15,7 @@ import java.util.Map;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import spark.*;
@@ -24,6 +25,7 @@ public class LoginController {
     private static final Duration TWOFA_TIME_INTERVAL = Duration.ofMinutes(30);
     private static final String TWOFA_ALGORITHM = "HmacSHA256";
     private static final int TWOFA_NUM_DIGITS = 6;
+    private static final int OTP_NUM_DIGITS = 8;
 
     // the DCS master database, very volatile, don't turn off the power
     private static Database database = new Database();
@@ -185,7 +187,14 @@ public class LoginController {
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance(TWOFA_ALGORITHM);
             keyGenerator.init(new SecureRandom());
-            return keyGenerator.generateKey().toString();
+            SecretKey keyObj = keyGenerator.generateKey();
+            byte[] keyBytes = keyObj.getEncoded();
+
+            String s = (new BigInteger(keyBytes)).mod(BigInteger.TEN.pow(OTP_NUM_DIGITS)).toString();
+            while (s.length() < OTP_NUM_DIGITS) {
+                s = "0" + s;
+            }
+            return s;
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
