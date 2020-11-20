@@ -85,6 +85,8 @@ public class LoginController {
         // TODO: generate a key for 2FA; you probably want to
         // store it somewhere so that it is available in subsequent
         // requests
+        String key = generate2FAKey();
+        request.session().attribute("2FAKey", key);
 
         response.redirect("/2fa/");
         return null;

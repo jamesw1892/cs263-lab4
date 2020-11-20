@@ -17,3 +17,7 @@ Move the `intervals` and `otp` methods from `authenticator/src/main/java/Program
 # Ex13
 
 Implement the `generate2FAKey` method in `server/src/main/java/dcs/LoginController.java` to generate a specific key for the SHA_256 HMAC using a CSPRNG.
+
+# Ex14
+
+Complete the `handleLoginPost` method in `server/src/main/java/dcs/LoginController.java` to generate the key using the `generate2FAKey` method and store it in the session.
